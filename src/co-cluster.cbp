@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="co-cluster" />
+		<Option makefile="SConstruct" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Option virtualFolders="src/Algo/;" />
+		<MakeCommands>
+			<Build command="" />
+			<CompileFile command="" />
+			<Clean command="" />
+			<DistClean command="$make -f $makefile distclean$target" />
+			<AskRebuildNeeded command="" />
+			<SilentBuild command="" />
+		</MakeCommands>
+		<Build>
+			<Target title="Release">
+				<Option output="clustering/clustering" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+				<MakeCommands>
+					<Build command="scons -f $makefile" />
+					<CompileFile command="" />
+					<Clean command="scons -f $makefile -c" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command="scons -f $makefile -s" />
+				</MakeCommands>
+			</Target>
+			<Target title="Debug">
+				<Option output="clustering/clustering" prefix_auto="1" extension_auto="1" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<MakeCommands>
+					<Build command="scons -f $makefile debug=1" />
+					<CompileFile command="" />
+					<Clean command="scons -f $makefile -c" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command="scons -f $makefile debug=1 -s " />
+				</MakeCommands>
+			</Target>
+			<Target title="HighLogRelease">
+				<Option output="clustering/clustering" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+				<MakeCommands>
+					<Build command="scons -f $makefile log_level=250" />
+					<CompileFile command="" />
+					<Clean command="scons -f $makefile -c" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command="scons -f $makefile -s" />
+				</MakeCommands>
+			</Target>
+			<Target title="HighLogDebug">
+				<Option output="clustering/clustering" prefix_auto="1" extension_auto="1" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<MakeCommands>
+					<Build command="scons -f $makefile debug=1 log_level=250" />
+					<CompileFile command="" />
+					<Clean command="scons -f $makefile -c" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command="scons -f $makefile debug=1 log_level=250 -s " />
+				</MakeCommands>
+			</Target>
+			<Target title="Test">
+				<Option output="../test/clustering/all_tests" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../test" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<MakeCommands>
+					<Build command="scons -f $makefile debug=1 log_level=250" />
+					<CompileFile command="" />
+					<Clean command="scons -f $makefile -c" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="" />
+					<SilentBuild command="scons -f $makefile debug=1 log_level=250 -s " />
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="Algo/AlgoBase.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/AlgoBase.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/AlgoFactory.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/EvalKMeans.cpp" />
+		<Unit filename="Algo/EvalKMeans.h" />
+		<Unit filename="Algo/EvalModel.cpp" />
+		<Unit filename="Algo/EvalModel.h" />
+		<Unit filename="Algo/KMeansAlgo.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/KMeansAlgo.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/ReOrdKMeansAlgo.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/ReOrdKMeansAlgo.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/SoftKMeansAlgo.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Algo/SoftKMeansAlgo.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/ClusterInfoCollection.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/Data.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/Data.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/Data.tcc">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/DenseData.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/DenseData.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/DenseData.tcc">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/Environment.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/Environment.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/GlobalInfo.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/GlobalInfo.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/LocalInfo.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/LocalInfo.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/LocalInfo.tcc">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/SparseData.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Common/SparseData.tcc">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Def/co-cluster.def">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Def/dataset.def">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Def/log.def">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Def/reader.def">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Evaluate/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/ReaderBase.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/ReaderBase.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/ReaderControl.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/ReaderControl.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/ReaderFactory.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/ReaderFactory.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/SimpleReader.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/SimpleReader.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/SparseReader.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/SparseReader.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Reader/test_reader.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="SConstruct">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/BregmanSimilarity.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/BregmanSimilarity.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/JSSimilarity.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/JSSimilarity.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/KBJSSimilarity.cpp" />
+		<Unit filename="Similarity/KBJSSimilarity.h" />
+		<Unit filename="Similarity/KLConstSimilarity.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/KLConstSimilarity.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/KLSimilarity.cpp">
+			<Option virtualFolder="src/Algo/" />
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/KLSimilarity.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/KernelSimilarity.cpp" />
+		<Unit filename="Similarity/KernelSimilarity.h" />
+		<Unit filename="Similarity/L1Similarity.cpp" />
+		<Unit filename="Similarity/L1Similarity.h" />
+		<Unit filename="Similarity/L2Similarity.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/L2Similarity.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/MahalanobisSimilarity.cpp" />
+		<Unit filename="Similarity/MahalanobisSimilarity.h" />
+		<Unit filename="Similarity/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/SimilarityBase.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/SimilarityBase.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/SimilarityFactory.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/SimilarityFactory.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/SoftKLSimilarity.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/SoftKLSimilarity.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Similarity/visim_model.cpp" />
+		<Unit filename="Similarity/visim_model.h" />
+		<Unit filename="Utils/CoClusterParams.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/CommanderFromFile.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/CommanderFromFile.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/Mutex.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/Mutex.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/Progress.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/ThreadManager.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/ThreadManager.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/Timer.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/app.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/app.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/app.tcc">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/log.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/log.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/params.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="Utils/params.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="clustering/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="clustering/clustering.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/Algo/KMeansAlgoTest.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/Common/DataTest.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/Reader/ReaderTest.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/Reader/SimpleReaderTest.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/SConstruct">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="../test/Similarity/KLSimilarityTest.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/Similarity/L1SimilarityTest.h" />
+		<Unit filename="../test/Similarity/L2SimilarityTest.h">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/clustering/SConscript">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Unit filename="../test/clustering/all_tests.cpp">
+			<Option target="Release" />
+			<Option target="HighLogRelease" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<envvars set="co_cluster" />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

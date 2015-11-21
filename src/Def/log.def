@@ -1,0 +1,3 @@
+P(int,  log_level, 255, "log_level", '\0', "Log level as in syslog", PROG_ALL )
+S(1024, log_destination, "stderr", "log_destination", '\0', "Log destination", PROG_ALL )
+SW(use_colors, false, "use_colors", '\0', "Use colors in logfile", PROG_ALL )

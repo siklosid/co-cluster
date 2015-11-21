@@ -1,0 +1,19 @@
+Import('env')
+
+env.Object([
+	'SimilarityFactory.cpp',
+	'L1Similarity.cpp',
+	'L2Similarity.cpp',
+	'KLSimilarity.cpp',
+	'JSSimilarity.cpp',
+	'KLConstSimilarity.cpp',
+	'SoftKLSimilarity.cpp',
+	'BregmanSimilarity.cpp',
+	'SimilarityBase.cpp',
+	'KernelSimilarity.cpp',
+	'MahalanobisSimilarity.cpp']
+)
+
+
+env.Library('cluster_similarity', [Glob('*.o'),
+				  '../' + '/Common/Data.o'])

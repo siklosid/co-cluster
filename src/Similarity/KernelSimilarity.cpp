@@ -1,0 +1,153 @@
+#include "KernelSimilarity.h"
+
+#include <math.h>
+
+#include <fstream>
+#include <utility>
+
+using std::pair;
+
+KernelSimilarity::~KernelSimilarity() {
+  log_status("Ending Kernel similarity");
+  delete local_info_;
+}
+
+
+void KernelSimilarity::Init() {
+  local_info_ = new LocalInfo<KernelItemInfo, KernelClusterInfo, KernelCoClusterInfo>();
+  local_info_->Init(NULL, // row_item_info
+                    NULL, // col_item_info
+                    new vector<KernelClusterInfo>(global_info_->GetNumRowClusts()), // row_clust_info
+                    NULL, // col_clust_info
+                    NULL); // co_cluster_info
+}
+
+
+void KernelSimilarity::InitIter(bool row_view) {
+
+  log_dbg("InitIter: %s", row_view?"true":"false");
+  real_iter_ = false;
+  local_info_->SetRowView(row_view);
+  data_->SetRowView(row_view);
+  tmp_clust_info_ =
+    new vector<KernelClusterInfo>(global_info_->GetNumRowClusts());
+
+}
+
+
+double KernelSimilarity::SimilarityToCluster(const uint32_t &node_id,
+                                         const uint32_t &clust_id) {
+
+  log_dbg("Measuring the similarity of node: %u to cluster: %u", node_id, clust_id);
+  uint32_t num_elements = local_info_->GetRowClusterInfo(clust_id).num_elements_;
+  if (num_elements == 0) {
+    //log_warn("Cluster: %u is empty", clust_id);
+    return numeric_limits<double>::infinity();
+  }
+
+  uint32_t act_medoid = local_info_->GetRowClusterInfo(clust_id).act_medoid_;
+  return data_->GetItem(node_id, act_medoid);;
+}
+
+
+double KernelSimilarity::SimilarityToBiCluster(const uint32_t &node_id,
+                                           const uint32_t &clust_id) {
+
+  log_dbg("Measuring the similarity of node: %u to cluster: %u", node_id, clust_id);
+  log_assert("Function SimilarityToBiCluster is not implemented in KernelSimilarity");
+  return 0.0; // Just to avoid warning
+}
+
+
+double KernelSimilarity::VectorSimilarityToCluster(const vector<double> &data,
+                                                   const uint32_t &clust_id) {
+
+  log_dbg("Measuring the similarity of vector to cluster: %u", clust_id);
+  uint32_t num_elements = local_info_->GetRowClusterInfo(clust_id).num_elements_;
+  if (num_elements == 0) {
+    log_warn("Cluster: %u is empty", clust_id);
+    return numeric_limits<double>::infinity();
+  }
+
+  uint32_t act_medoid = local_info_->GetRowClusterInfo(clust_id).act_medoid_;
+
+  return data[act_medoid];
+}
+
+void KernelSimilarity::AddNodeToCluster(const uint32_t &node_id,
+                                        const uint32_t &cluster_id) {
+
+
+  real_iter_ = true;
+  log_dbg("Adding node: %u to cluster: %u", node_id, cluster_id);
+  data_mutex_.Lock();
+  (*tmp_clust_info_)[cluster_id].num_elements_++;
+
+
+  vector<pair<uint32_t, double> >::iterator it =
+    (*tmp_clust_info_)[cluster_id].medoid_vals_.begin();
+  vector<pair<uint32_t, double> >::iterator it_end =
+    (*tmp_clust_info_)[cluster_id].medoid_vals_.end();
+
+  // uint32_t orig_id = (node_id - node_id%8)/8;
+
+  // If our kernel is not quadratic
+  bool is_medoid_candid = false;
+  double own_sum;
+  if (node_id < data_->GetNumCols()) {
+    is_medoid_candid = true;
+    own_sum = 0.0;
+  } else {
+    own_sum = numeric_limits<double>::max();
+  }
+
+  double min_sum = numeric_limits<double>::max();
+  uint32_t min_id = 0;
+  for (; it != it_end; ++it) {
+    // uint32_t other_orig_id = (it->first - it->first%8)/8;
+    if (it->second != numeric_limits<double>::max()) {
+      it->second += data_->GetItem(node_id, it->first);
+      if (it->second < min_sum) {
+        min_sum = it->second;
+        min_id = it->first;
+      }
+    }
+
+    if (is_medoid_candid) {
+      own_sum += data_->GetItem(it->first, node_id);
+    }
+  }
+  if (own_sum < min_sum) {
+    min_sum = own_sum;
+    min_id = node_id;
+  }
+
+  (*tmp_clust_info_)[cluster_id].medoid_vals_.push_back(pair<uint32_t, double>(node_id, own_sum));
+  (*tmp_clust_info_)[cluster_id].min_medoid_ = min_id;
+
+  data_mutex_.Unlock();
+}
+
+
+void KernelSimilarity::AddVectorToCluster(const vector<double> &avg, const uint32_t &cluster_id) {
+  log_dbg("Adding vector to cluster: %u", cluster_id);
+  log_assert("Function AddVectorToCluster is not implemented in KernelSimilarity");
+}
+
+
+void KernelSimilarity::FinishIter() {
+  if (real_iter_) {
+    for (uint32_t clust_id = 0; clust_id < global_info_->GetNumRowClusts(); ++clust_id) {
+      (*tmp_clust_info_)[clust_id].act_medoid_ = (*tmp_clust_info_)[clust_id].min_medoid_;
+    }
+    local_info_->SwapClusterInfo(tmp_clust_info_);
+    //if (do_bicluster_) local_info_->SwapCoClusterInfo(tmp_co_clust_info_);
+  } else {
+    delete tmp_clust_info_;
+    //if (do_bicluster_) delete tmp_co_clust_info_;
+  }
+}
+
+
+void KernelSimilarity::Finish() {}
+

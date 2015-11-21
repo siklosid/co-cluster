@@ -1,0 +1,39 @@
+env = Environment(
+    CPPPATH=['#.', '#../src'],
+    LIBPATH=[
+        '#../src/build/Utils', '#../src/build/Common',
+        '#../src/build/Similarity', '#../src/build/Reader',
+        '#Evaluate', '#../src/build/Algo',
+        '#Def'],
+    LIBS=[
+        'cluster_utils',
+        'cluster_common',
+        'cluster_reader',
+	'cluster_similarity',
+        'cluster_algo',
+	      'pthread',
+        'gtest']
+)
+
+debug = ARGUMENTS.get('debug', 1)
+log_level = ARGUMENTS.get('log_level', '250')
+
+
+if int(debug):
+   str = '-O0 -ggdb -Wall -DDEBUG_LEVEL=' + log_level
+   env.Append(CCFLAGS = str)
+else:
+   str = '-O3 -Wall -DDEBUG_LEVEL=' + log_level
+   env.Append(CCFLAGS = str)
+
+
+SConscript([
+	#'Utils/SConscript',
+	#'Common/SConscript',
+	#'Similarity/SConscript',
+	#'Reader/SConscript',
+	#'Evaluate/SConscript',
+	#'Algo/SConscript',
+	'clustering/SConscript'],
+	exports = ['env']
+)

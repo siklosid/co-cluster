@@ -1,0 +1,17 @@
+Import('env')
+
+env.Program(
+    target='all_tests',
+    source=['all_tests.cpp'],
+    LIBS=env['LIBS']+
+        ['cluster_similarity',
+         'cluster_utils',
+         'cluster_reader']
+)
+
+
+env.Program(
+    target='reader_test',
+    source=['reader_test.cpp'],
+    LIBS=env['LIBS']
+)

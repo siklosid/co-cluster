@@ -1,0 +1,11 @@
+reader[0]    simple
+similarity[0]	js
+input_file[0]	kl_matrix.txt
+data_type[0]	dense
+num_datas	1
+
+num_row_cluster	3
+num_col_cluster 2
+num_iter	20
+
+do_bicluster	true

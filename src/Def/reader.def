@@ -1,0 +1,8 @@
+P(uint, num_reader_threads, 1, "num_reader_threads", 0, "Number of threads that reads the dataset", PROG_READER)
+P(uint, num_datas, 1, "num_datas", 0, "Number datas we use", PROG_READER)
+P(uint, num_lines, 10, "num_lines", 0, "Number of lines to read in once", PROG_READER)
+
+SW(ignore_id, false, "ignore_id", '\0', "Ignore id when reading data with dense reader", CO_CLUSTER)
+
+//S(1024, readers, "simple", "readers", 0, "Name of the readers of datas in the same order seperated by |", CO_CLUSTER)
+//S(1024, input_files, "", "input_files", 0, "Name of the input_files of datas in the same order seperated by |", CO_CLUSTER)

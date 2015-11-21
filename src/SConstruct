@@ -1,0 +1,49 @@
+debug = ARGUMENTS.get('debug', 0)
+log_level = ARGUMENTS.get('log_level', '40')
+
+if int(debug):
+    vdir='./debug'
+else:
+    vdir='./build'
+
+env = Environment(
+    CPPPATH=['#.'],
+    LIBPATH=[
+	'#'+vdir+'/Utils', '#'+vdir+'/Common',
+        '#'+vdir+'/Similarity', '#'+vdir+'/Reader',
+        '#'+vdir+'/Evaluate', '#'+vdir+'/Algo',
+	'#'+vdir+'/Def'],
+    LIBS=[
+        'cluster_utils',
+	'cluster_common',
+	'pthread'],
+)
+
+
+
+
+if int(debug):
+   str = '-O0 -ggdb -Wall -DDEBUG_LEVEL=' + log_level
+   env.Append(CCFLAGS = str)
+   vdir='./debug'
+else:
+   str = '-O3 -Wall -Wno-delete-non-virtual-dtor -DDEBUG_LEVEL=' + log_level
+   env.Append(CCFLAGS = str)
+   vdir='./build'
+
+
+#env["CXX"] = "g++-4.3"
+
+
+dirs = [
+	'Utils',
+	'Common',
+	'Similarity',
+	'Reader',
+	'Evaluate',
+	'Algo',
+	'clustering']
+
+for i in dirs:
+	SConscript(i + '/SConscript', exports = ['env'], variant_dir=vdir + '/' + i, duplicate=0)
+

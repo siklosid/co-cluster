@@ -1,0 +1,228 @@
+
+A configfile es command option kezeles
+--------------------------------------
+
+1. A parameterek definialasa
+
+A parameterek egy class mezoibe kerulnek be a 
+Fetch(configfilename,argc, argv) metodus hivasaval.
+A class nevet es a parametereket egy kulon file-ban adhatok
+meg a CLASS, P, S, F, SW, HELP makrokkal.
+
+pl(test.def):
+
+CLASS(TestParams)
+
+F(100,    inputfn, "",             "inputfile",  1,  "[inputfile]",1)
+F(100,	  outputfn,"",             "outputfile", 2,  "[outputfile]",1)
+P(int, 	  par1,    1,              "par1",      'a', "Ez a parameter1",1)
+P(double, par2,    2.22,           "Par2",      'b', "Ez aparameter2",1)
+S(100, 	  par3,    "default value","par3",      'c', "Ez aparameter3",1)
+P(char,   par4,    'd',            "par4",      'd', "Ez aparameter4",1)
+PA(int,5, par4,    "2,4,6,3,1",    "par5",      'd', "Ez egy parametertomb",1)
+SA(int,3, par5,    "dfs,f,sdf",    "par6",      'd', "Ez isegy parametertomb",1)
+SW(switch1,         false,         "switch1",   's', "Ez a switch1",1)
+HELP(                              "help",      'h', "help eleje","help vege",1)
+CONFIGFILE("PROGROOT","test.conf","configfile",'c',"Ez a config file",1)
+
+szintaxis:
+P(type,var,def,keyword,c,help,pr):
+	Egy "var" nevu "type" tipusu mezo keletkezik, default erteke a "def"
+	lesz. A configfileban a "keyword" utan illetve
+	a parancssorban a --keyword vagy a -c utan adhatjuk meg az erteket.
+	A help-ben a "help" szoveg irodik ki a --keyword, -c mellett. 
+	A type lehet: int, long, float, double, char, uint, ulong
+	A help csak akkor jelenik meg a a pr es a Fetch-ben megadott pr
+	&-se nem 0.
+S(len,var,def,keyword,c,help,pr):
+	A P-hez hasonlo csak itt egy len hosszu string keletkezik
+	(char var[len] tipusu);
+FN(len,var,def,keyword,c,help,pr):
+    Teljesen megegyezik az S-sel, csak oprendszertol fuggoen csereli a 
+    '/' es '\' karaktereket.
+SW(var,default,keyword,c,help,pr):
+	Switch tipusu parameter. Egy int tipusu "var" mezo keletkezik,
+	amelynek erteke 1(0), ha a parancssorban szerepel a --keyword=yes(no)
+	vagy a -c=yes(no),
+	illetve ha a configfile-ben szerepel egy "keyword yes"(no) sor.
+	yes helyett hasznalhato: {on,true,1} no helyett: off,false,0
+	A help ugyanaz mint P-nel.
+F(len,var,def,keyword,pos,help,pr):
+	Ezzel az egyszeru, nem '-'-szal kezdodo parametereket lehet 
+	definialni( ezek altalaban a filenevek, ezert ebbol egy len hosszu 
+	sztring tipusu mezo keletkezik);
+	A parancssorban a "pos"-adik nem '-'-szal kezdodo parametert olvassa
+	be. A configfile-ban a fentiek hasonloan "keyword ertek" alakban
+	lehet megadni.
+HELP(helpkeyword,helpchar,helpbegin,helpend):
+	Ezzel lehet megadni melyik keyword irja ki a help-t ( altalaban
+	a --help, es a -h). A usage es a parameterek felsorolasa kozott
+	a "helpbegin"-t irja ki, a felsorolas utan a "helpend"-et.
+CONFIGFILE(envvar,fn,keyword,c,help)
+	Ezzel lehet megadni a default configfile nevet, helyet es meg a
+	configfile-t megado kapcsolokat. A fn lesz a default config file neve,
+	Ha a envvar nevu shell-valtozo egy path-t tartalmaz, akkor ott fogja
+	keresni az fn-t. A --keyword vagy -c segitsegevel lehet a parancssorban
+	mas configfile-t megadni. help: lasd fenntebb.
+PA(type,size,var,def,keyword,c,help,pr):
+	P-hez hasonlo, de a var-bol egy size meretu tomb keletkezik.
+	A tomb ertekeit ,-vel elvlasatva lehet megadni
+PA(len,size,var,def,keyword,c,help,pr):
+	PA-hoz hasonlo, csak max len hosszu char*-okkal.
+
+
+Ne irjunk a makrok utan ";"-t mert az rengeteg forditasi hibat okoz.
+
+2. A parameterek hasznalata a programban
+
+A parameterek hasznalatahoz a params.h-t kell inkludalni, de elotte
+a PARFILE -ban meg kell adni a parameterket definialo file-t.
+A parametereket a 
+	Fetch(char *configfilename, int argc,char *argv[],ProgMask pr=0) 
+vagy:
+	Fetch( int argc,char *argv[],ProgMask pr=0) 
+metodus hivasaval lehet beolvasni. A masodik abban kulonbozik az elsotol,
+hogy a .def-ben megadott default configfile-t olvassa.
+Vannak meg gyengitett Fetch-ekk:
+	void Fetch_conf(char *conffn,ProgMask pr=0); //csak configfile
+	void Fetch_conf(ProgMask pr=0); //csak default configfile
+	void Fetch_comm(int argc,char *argv[],ProgMask pr=0); //csak parancssor
+
+A help csak akkor irodk ki, ha a megadott pr es az adott parameterhez megadott
+pr &-e nem nulla.
+
+Pl. a kovetkezo program (test.cc) kiirja a parametereket:
+
+
+#include <stdio.h>
+
+#define PARFILE "test.def"
+#include "params.h"
+
+int main(int argc,char *argv[],char **envv){
+	TestParams params;
+
+	params.Fetch("test.conf",argc,argv,1);
+	
+	printf("inputfn: %s\noutputfn: %s\npar1: %d\npar2: %6.3f\npar3: %s\npar4: %c\nswitch: %d\n",
+		params.inputfn,
+		params.outputfn,
+		params.par1,
+		params.par2,
+		params.par3,
+		params.par4,
+		params.switch1);
+
+}
+
+A Makefile egy params.a-t csinal, ezt kell hozzalinkelni a programhoz.
+
+3. A configfile szintaxisa
+
+- A configfileban "keyword ertek" alakban adhatjuk meg a parametereket.
+- Minden sorban csak egy "keyword ertek" lehet.
+- A keyword elott, a keyword es az ertek kozott ill. az ertek utan
+ barmennyi space es tab lehet, ezek nem szamitanak bele az ertekbe.
+- Barhol barmennyi ures sor lehet.
+- a #-sel kezdodo sorok kommentnek szamitanak.
+- Ha sztring tipusu parameternel az ertek space-t vagy tabot tartalmaz,
+  akkor tegyuk idezojelek(") koze.
+- Switch tipusu parameternel a "keyword yes", "keyword no", "keyword on",
+  "keyword off" egyiket kell hasznalni.
+- A keywordok case-sensitive-ek.
+
+UJ: Lehet kornyezetvalozokat beleirni a configfileba $(VAR) formaban. Ekkor
+    a params.Fetch("test.conf",argc,argv,envv); format kell hasznalni.
+
+UJ: Lehet a sajat valtozokat is hasznalni:
+valtozo1=ertek1
+valtozo = " ertek2 "
+
+parameter1 "aaa$(valtozo1)bbb"
+
+Pl. (test.conf)
+
+# inputfile megadasa:
+inputfile input.data
+
+# outputfile megadasa:
+outputfile output.data
+
+# egyeb parameterek:
+par1 999
+Par2 3.14 
+par4 z
+
+# A par3-nal kell az idezojel mert kulonben csak a "hgtyi" lenne az ertek.
+par3 "hgtyi ujhgfhj fmj"
+
+#switch1 Yes
+
+4. A parancssori parameterek hasznalata
+
+- A sorrend nem szamit
+- A rovid es hosszu parameterek keverhetok
+- Mindegy hogy a parametert egybe vagy kulonirjuk az ertekkel
+
+pl. a kovetkezok ekvivalensek:
+
+test --par1 9 --Par2 3.14 --par3 hello --par4 q --switch1 input.dat output.dat
+test -a 9 -b 3.14 -c hello -d q -s input.data output.data
+test -a9 -b3.14 -chello -dq -s input.data output.data
+test  -c hello -par4 q input.data -par1 9 output.data -b3.14
+
+A fenti (test.cc) peldaban a "test --help" -re a kovetkezo irodik ki:
+
+Usage: ./test [OPTIONS]... [inputfile] [outputfile]
+help eleje
+-a, --par1      Ez a parameter1
+-b, --Par2      Ez aparameter2
+-c, --par3      Ez aparameter3
+-d, --par4      Ez aparameter4
+-s, --switch1   Ez a switch1
+help vege
+
+5. Egyeb
+
+- Ha egy parameter nincs megadva sehol, akkor automatikusan a megadott
+  default erteket veszi fel. switchek default erteke 0.
+- A parancssor mindig felulbiralja a configfile-t.
+- A keywordok case-sensitive-ek a configfileban es a parancssorban is.
+- A switch-eket kiveve minden "var" mezo mellett keletkezik egy "sw_var" 
+  nevu int tipusu mezo is, aminek ertek 1, ha meg van adva a 
+  "var" valtozo es 0 egyebkent 
+  ( ekkor a "var" a default erteket veszi fel)
+- Azt hiszem ne hasznaljuk rovid parameternek a ':', '?', '-' karaktereket 
+  mert specialis jelentesuk van.
+
+
+
+
+TROUBLESHOOTING:
+Mivel a makrok tobb helyen es mindig mashogy fejtodnek ki, a .def-ben 
+elkovetett esetleges hibak fura hibauzeneteket generalnak.
+
+1. Rengeteg szintaktikai hiba forditaskor:
+ a. tenyleg rengeteg szintaktikai hiba van a programban.
+ b. vagy a .def-ben egyik sor vegen veletlenul van egy pontosvesszo.
+
+2. STAMAS FELE HIBA: 
+ 1. valtozat:
+  ../Utils/params.h: In method `void TestParams::initstruct ()':
+  ../Utils/params.h:123: `inputfile' undeclared (first use this function)	
+ 2. valtozat: 
+   Lefordul, de egy parametert nem olvas be rendesen, es a
+   valgrind is panaszkodik:
+  ==11708== Conditional jump or move depends on uninitialised value(s)
+  ==11708==    at 0x4002010E: strlen (mac_replace_strmem.c:164)
+  ==11708==    by 0x42080A30: __strdup (in /lib/i686/libc-2.2.5.so)
+  ==11708==    by 0x804A200: Params_Base::addfileitem(char *, int) (in /home/cskaresz/websearch/test/test)
+  ==11708==    by 0x8048F17: TestParams::initstruct(void) (in /home/cskaresz/websearch/test/test)
+
+  Ennek valoszinu oka: a .def-ben veletlenul lemaradt az idezojel a 
+   keyword korul.
+
+KNOWN BUGS / TODO
+- shellvaltozo-helyettesites a default-ertekben
+- Nem lehet megadni a parameterek kotelezo illetve opcionalis jelleget.
+

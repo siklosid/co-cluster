@@ -1,0 +1,13 @@
+#define QEP_NUM_DATAS 10
+
+SA(1024,QEP_NUM_DATAS,similarity,"l2,,,,,,,,,","similarity",0,"Name of the similarity measure:\n \tl2 - euclides\n\tkl - Kullback-Leibler\n\tjs - Jensen-Shannon\n\tkl_const - Kullback-Leibler with label constraints",CO_CLUSTER)
+
+SA(1024,QEP_NUM_DATAS,reader,"simple,,,,,,,,,", "reader",0,"Name of the reader we use for this data:\n \tsimple - dense matrix format\n \tsparse - sparse matrix format",PROG_READER)
+
+SA(1024,QEP_NUM_DATAS,input_file,",,,,,,,,,", "input_file",0,"Name of the input file. Input files are searched in the CLUSTROOT/inputs directory by default",PROG_READER)
+
+SA(1024,QEP_NUM_DATAS,input_test_file,",,,,,,,,,", "input_test_file",0,"Name of the input test file. Input files are searched in the CLUSTROOT/inputs directory by default",PROG_READER)
+
+SA(1024,QEP_NUM_DATAS,data_type,"dense,,,,,,,,,", "data_type",0,"Name of the data type:\n \tdense - dense data type\n \tsparse - sparse data type ",PROG_READER)
+
+PA(double,QEP_NUM_DATAS,data_weight,"0.5,0.5,,,,,,,,", "data_weight",0,"Weight of the sims on the different datasets",PROG_READER)

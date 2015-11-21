@@ -1,0 +1,517 @@
+/*! This algo implements a kmeans algo on two datasets where the similarity of */
+/*! an item to a cluster is computed by the followings: */
+/*! 1. it computes the item-cluster similarities on the first dataset */
+/*! 2. for the most similar NUM_REORD cluster it recomputes the similarities, */
+/*!    but now we use the second dataset. */
+
+#include "ReOrdKMeansAlgo.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+
+#include <fstream>
+#include <sstream>
+
+#include "Common/Environment.h"
+//#include "Common/DenseData.h"
+
+#define GRANULITY 100
+#define NUM_REORD 100
+
+
+ReOrdKMeansAlgo::ReOrdKMeansAlgo(const CoClusterParams &params)
+  : AlgoBase(params), verbose_(params.verbose) {
+
+  lines_ = 0;
+  need_more_col_iter_ = true;
+
+  if (Environment::get().params().do_output_sims) {
+    Environment::get().params().need_last_iter = true;
+  }
+}
+
+ReOrdKMeansAlgo::~ReOrdKMeansAlgo() {
+  log_status("Ending kmeans algo");
+}
+
+
+bool ReOrdKMeansAlgo::ParallelStep() {
+  mutex_.Lock();
+  if (lines_ >= global_info_->GetNumRowItems()) {
+    running_iter_ = false;
+    mutex_.Unlock();
+    return running_iter_;
+  }
+  uint32_t my_line = lines_;
+  lines_++;
+
+  if (verbose_) progress_->show(lines_, "Lines processed");
+  mutex_.Unlock();
+
+  double sim = 0.0;
+  uint32_t min_clust;
+
+  multimap<double, uint32_t> sims_to_reorder;
+  sims_to_reorder.clear();
+
+  if (row_view_) {
+    SimpleSimilarity(my_line, sims_to_reorder);
+    sim = ReordSimilarity(my_line, min_clust, sims_to_reorder);
+  } else {
+    SimpleSimilarity(my_line, sims_to_reorder);
+    sim = sims_to_reorder.begin()->first;
+    min_clust = sims_to_reorder.begin()->second;
+  }
+
+  if (!last_iter_) {
+    mutex_.Lock();
+    empty_clusters_[min_clust]=false;
+    similarities_.insert(std::pair<double, uint32_t>(sim, my_line));
+    AddNodeToCluster(my_line, min_clust);
+    if (min_clust != global_info_->GetRowClust(my_line)) {
+      if (row_view_) row_moved_items_++;
+      else col_moved_items_++;
+    }
+    mutex_.Unlock();
+  }
+
+
+  //if (last_iter_) return running_iter_;
+  return running_iter_;
+}
+
+
+void ReOrdKMeansAlgo::Init() {
+
+
+  global_info_->Init(data_set_[0]->GetNumRows(), data_set_[0]->GetNumCols());
+  for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+    (*it)->Init();
+  }
+
+  InitiateClusters();
+  if (do_bicluster_) {
+    row_view_ = false;
+    InitiateClusters();
+  }
+
+}
+
+
+void ReOrdKMeansAlgo::InitIter() {
+  lines_ = 0;
+  if (row_view_) {
+    row_moved_items_ = 0;
+    col_moved_items_ = 0;
+  }
+  running_iter_ = true;
+  global_info_->InitIter(row_view_);
+  if (row_view_) {
+    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+      (*it)->InitIter(row_view_);
+    }
+  } else {
+    sims_[0]->InitIter(row_view_);
+  }
+  progress_ = new Progress<uint32_t>(global_info_->GetNumRowItems());
+  similarities_.clear();
+  empty_clusters_.clear();
+  empty_clusters_.resize(global_info_->GetNumRowClusts(), true);
+
+  if (last_iter_ && Environment::get().params().do_output_sims) {
+    all_similarities_ = new DenseData<double>(global_info_->GetNumRowItems(),
+        global_info_->GetNumRowClusts(),
+        numeric_limits<double>::infinity());
+  }
+}
+
+
+bool ReOrdKMeansAlgo::NeedMoreIter() {
+  log_info("Moved items in rows: %u", row_moved_items_);
+  log_info("Moved items in cols: %u", col_moved_items_);
+  double percent_row;
+  double percent_col;
+  if (row_view_) {
+    percent_row = row_moved_items_*100.0/global_info_->GetNumRowItems();
+    percent_col = col_moved_items_*100.0/global_info_->GetNumColItems();
+  } else {
+    percent_row = row_moved_items_*100.0/global_info_->GetNumColItems();
+    percent_col = col_moved_items_*100.0/global_info_->GetNumRowItems();
+  }
+  if (percent_col <= 1) need_more_col_iter_ = false;
+  if (percent_row <= 1 && percent_col <= 1) return false;
+  return true;
+}
+
+
+bool ReOrdKMeansAlgo::NeedMoreColIter() {
+  return need_more_col_iter_;
+}
+
+
+void ReOrdKMeansAlgo::FinishIter() {
+  if (!last_iter_) {
+    map<double, uint32_t>::reverse_iterator it_sims = similarities_.rbegin();
+    uint32_t num_empty_clusters = 0;
+    for (uint32_t clust_id = 0;
+         clust_id < empty_clusters_.size() && it_sims != similarities_.rend();
+         clust_id++) {
+      if (empty_clusters_[clust_id]) {
+        num_empty_clusters++;
+        if (row_view_) {
+          for (vector< SimilarityBase* >::iterator it = sims_.begin();
+               it != sims_.end(); it++) {
+            (*it)->AddNodeToCluster(it_sims->second, clust_id);
+          }
+        } else {
+          sims_[0]->AddNodeToCluster(it_sims->second, clust_id);
+        }
+        it_sims++;
+      }
+    }
+    if (num_empty_clusters > 0) log_info("Found %u empty clusters", num_empty_clusters);
+  }
+
+//  uint32_t num_clusts = global_info_->GetNumRowClusts();
+//  srand(time(NULL));
+//  for (uint32_t clust_id = 0; clust_id < empty_clusters_.size(); clust_id++) {
+//    if (empty_clusters_[clust_id]) {
+//      log_info("Found an empty cluster");
+//      vector<double> avg(global_info_->GetNumColItems());
+//      for (uint32_t col_num = 0; col_num < global_info_->GetNumColItems(); col_num++) {
+//        double val = ((*maxs)[col_num] - (*mins)[col_num])/GRANULITY;
+//        uint32_t random_number = rand()%GRANULITY;
+//        // log_dbg("random number: %u", random_number);
+//        avg[col_num] = (*mins)[col_num] + val/2 + random_number*val;
+//      }
+//      for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+//        (*it)->AddVectorToCluster(avg, clust_id);
+//        //moved_items_++;
+//      }
+//    }
+//  }
+
+  global_info_->FinishIter();
+  if (row_view_) {
+    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+      (*it)->FinishIter();
+    }
+  } else {
+    sims_[0]->FinishIter();
+  }
+  delete progress_;
+}
+
+
+void ReOrdKMeansAlgo::Finish() {
+
+  global_info_->InitIter(true);
+  for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+    (*it)->InitIter(true);
+  }
+
+  string output_dir = Environment::get().params().output_dir;
+  std::ofstream row_result((output_dir + Environment::get().params().output_row_result).c_str());
+  if(row_result.fail()) {
+    log_err("Input file: %s not found", (output_dir + Environment::get().params().output_row_result).c_str());
+  }
+
+  std::ofstream sims_result((output_dir + Environment::get().params().output_sims).c_str());
+  if (sims_result.fail()) {
+    log_err("Input file: %s not found", (output_dir + Environment::get().params().output_sims).c_str());
+  }
+  bool do_output_sims = Environment::get().params().do_output_sims;
+  bool do_output_own_sim = Environment::get().params().do_output_own_sim;
+
+  global_info_->SetRowView(true);
+  log_status("Writing out the row result:");
+  for (uint32_t i = 0; i < global_info_->GetNumRowItems(); i++) {
+    row_result << i << " " <<  global_info_->GetRowClust(i);
+    if (do_output_own_sim) {
+      if (do_output_sims) {
+        row_result << " " << all_similarities_->GetItem(i, global_info_->GetRowClust(i)) << std::endl;
+      } else {
+        row_result << " " << sims_[0]->SimilarityToBiCluster(i, global_info_->GetRowClust(i)) << std::endl;
+      }
+    } else {
+      row_result << std::endl;
+    }
+    if (do_output_sims) {
+      //uint32_t min_clust;
+      //if (sims_.size() > 1) NormalizedSimilarity(i, min_clust, &sims_result);
+      //else SimpleSimilarity(i, min_clust, &sims_result);
+      sims_result << all_similarities_->GetItem(i, 0);
+      for (uint32_t row_clust = 1; row_clust < global_info_->GetNumRowClusts(); row_clust++) {
+        sims_result << " " << all_similarities_->GetItem(i, row_clust);
+      }
+      sims_result << std::endl;
+    }
+  }
+  row_result.close();
+  sims_result.close();
+
+  if (do_bicluster_) sims_[0]->OutputCoClustInfo();
+
+  global_info_->FinishIter();
+  for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+    (*it)->FinishIter();
+  }
+
+
+  if (do_bicluster_) {
+    global_info_->InitIter(false);
+    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+      (*it)->InitIter(false);
+    }
+
+    std::ofstream col_result((output_dir + Environment::get().params().output_col_result).c_str());
+    if(col_result.fail()) {
+      log_err("Input file: %s not found", (output_dir + Environment::get().params().output_col_result).c_str());
+    }
+
+    log_status("Writing out the col result:");
+    for (uint32_t i = 0; i < global_info_->GetNumRowItems(); i++) {
+      col_result << i << " " << global_info_->GetRowClust(i);
+      if (do_output_own_sim) {
+        col_result << " " << sims_[0]->SimilarityToBiCluster(i, global_info_->GetRowClust(i)) << std::endl;
+      } else {
+        col_result << std::endl;
+      }
+    }
+    col_result.close();
+
+
+    global_info_->FinishIter();
+    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+      (*it)->FinishIter();
+    }
+  }
+
+
+
+  for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+    (*it)->Finish();
+  }
+}
+
+
+void ReOrdKMeansAlgo::InitiateClusters() {
+
+  // InitIter for similarities and global_info
+  global_info_->InitIter(row_view_);
+  if (row_view_) row_moved_items_ = global_info_->GetNumRowItems();
+  else col_moved_items_ = global_info_->GetNumRowItems();
+  if (row_view_) {
+    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+      (*it)->InitIter(row_view_);
+    }
+  } else {
+    sims_[0]->InitIter(row_view_);
+  }
+
+
+  // Different kind of initial steps. Uncomment the one you would like to use
+//  // random item in each cluster
+//  uint32_t num_items = global_info_->GetNumRowItems();
+//  srand(time(NULL));
+//
+//  for (uint32_t clust_num = 0; clust_num < global_info_->GetNumRowClusts(); clust_num++) {
+//    uint32_t rand_item = rand()%num_items;
+//    AddNodeToCluster(rand_item, clust_num);
+//  }
+
+  if (Environment::get().params().do_continue) {
+
+
+    string clust_file;
+    if (row_view_) {
+      clust_file = (string(Environment::get().params().output_dir) +
+                    string(Environment::get().params().output_row_result)).c_str();
+    } else {
+      clust_file = (string(Environment::get().params().output_dir) +
+                    string(Environment::get().params().output_col_result)).c_str();
+    }
+
+    std::ifstream in(clust_file.c_str());
+    if (in.fail()) {
+      log_err("Couldn't open file: %s", clust_file.c_str());
+      exit(1);
+    }
+
+    string line;
+    std::stringstream ss;
+
+    uint32_t id;
+    uint32_t clust;
+    getline(in, line);
+    for (uint32_t num_line = 0; num_line < global_info_->GetNumRowItems() && in.good(); num_line++) {
+      if (line.size() > 0) {
+        ss.clear();
+        ss.str(line);
+        ss >> id;
+        ss >> clust;
+        AddNodeToCluster(id, clust);
+        getline(in, line);
+      } else {
+        log_err("Error in cluster file: %s at line: %u", clust_file.c_str(), num_line);
+        exit(1);
+      }
+    }
+
+    in.close();
+  } else {
+
+
+
+
+
+
+    // each item in a random cluster
+    uint32_t num_clusts = global_info_->GetNumRowClusts();
+    srand(time(NULL));
+    //srand(1);
+
+    for (uint32_t row_num = 0; row_num < global_info_->GetNumRowItems(); row_num++) {
+      uint32_t rand_item = rand()%num_clusts;
+      AddNodeToCluster(row_num, rand_item);
+    }
+
+// k-interval
+//  mins = new vector<double>(global_info_->GetNumColItems(), numeric_limits<double>::max());
+//  maxs = new vector<double>(global_info_->GetNumColItems(), numeric_limits<double>::min());
+//
+//  for (uint32_t row_num = 0; row_num < global_info_->GetNumRowItems(); row_num++) {
+//    for (uint32_t col_num = 0; col_num < global_info_->GetNumColItems(); col_num++) {
+//      if (data_set_[0]->GetItem(row_num, col_num) < (*mins)[col_num]) {
+//        (*mins)[col_num] = data_set_[0]->GetItem(row_num, col_num);
+//      }
+//      if (data_set_[0]->GetItem(row_num, col_num) > (*maxs)[col_num]) {
+//        (*maxs)[col_num] = data_set_[0]->GetItem(row_num, col_num);
+//      }
+//    }
+//    if (row_num%10000 == 0) {
+//      log_info("line: %u", row_num);
+//    }
+//  }
+//
+//  uint32_t num_clusts = global_info_->GetNumRowClusts();
+//  srand(time(NULL));
+//
+//  for (uint32_t clust_num = 0; clust_num < global_info_->GetNumRowClusts(); clust_num++) {
+//    vector<double> avg(global_info_->GetNumColItems());
+//    for (uint32_t col_num = 0; col_num < global_info_->GetNumColItems(); col_num++) {
+//      double val = ((*maxs)[col_num] - (*mins)[col_num])/GRANULITY;
+//       uint32_t random_number = rand()%GRANULITY;
+//       log_dbg("random number: %u", random_number);
+//      avg[col_num] = (*mins)[col_num] + val/2 + clust_num*val;
+//    }
+//    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+//      (*it)->AddVectorToCluster(avg, clust_num);
+//      moved_items_++;
+//    }
+//  }
+
+// featuresum
+
+//  map<double, vector<uint32_t> > sum_to_id;
+//  sum_to_id.clear();
+//  for (uint32_t row_num = 0; row_num < global_info_->GetNumRowItems(); row_num++) {
+//    double sum = 0;
+//    for (uint32_t col_num = 0; col_num < global_info_->GetNumColItems(); col_num++) {
+//      sum += data_set_[0]->GetItem(row_num, col_num);
+//    }
+//
+//    map<double, vector<uint32_t> >::iterator it;
+//    if ((it = sum_to_id.find(sum)) != sum_to_id.end()) {
+//      sum_to_id[sum].push_back(row_num);
+//    } else {
+//      sum_to_id[sum].clear();
+//      sum_to_id[sum].push_back(row_num);
+//    }
+//  }
+//  uint32_t num = 0;
+//  uint32_t clust_num = 0;
+//  double threshold = (double)global_info_->GetNumRowItems()/global_info_->GetNumRowClusts();
+//  for (map<double, vector<uint32_t> >::iterator it = sum_to_id.begin(); it != sum_to_id.end(); ++it) {
+//    for (vector<uint32_t>::iterator itv = (it->second).begin(); itv != (it->second).end(); ++itv) {
+//      if (num >= (clust_num+1)*threshold) clust_num++;
+//      AddNodeToCluster(*itv, clust_num);
+//      num++;
+//    }
+//  }
+  }
+  global_info_->FinishIter();
+  if (row_view_) {
+    for (vector< SimilarityBase* >::iterator it = sims_.begin(); it != sims_.end(); it++) {
+      (*it)->FinishIter();
+    }
+  } else {
+    sims_[0]->FinishIter();
+  }
+}
+
+
+void ReOrdKMeansAlgo::SimpleSimilarity(uint32_t &node_id,
+
+                                       multimap<double, uint32_t> &sims_to_reorder) {
+
+  for (uint32_t clust_id = 0; clust_id < global_info_->GetNumRowClusts(); clust_id++) {
+    double sim = 0;
+    //if (do_bicluster_) sim = sims_[0]->SimilarityToBiCluster(node_id, clust_id);
+    //else sim = sims_[0]->SimilarityToCluster(node_id, clust_id);
+    if (row_view_) {
+      sim = sims_[1]->SimilarityToCluster(node_id, clust_id);
+    } else {
+      sim = sims_[0]->SimilarityToBiCluster(node_id, clust_id);
+    }
+    sims_to_reorder.insert(std::pair<double, uint32_t>(sim, clust_id));
+
+//    if (last_iter_ && Environment::get().params().do_output_sims) {
+//      mutex_.Lock();
+//      all_similarities_->SetItem(node_id, clust_id, sim);
+//      mutex_.Unlock();
+//    }
+  }
+}
+
+
+double ReOrdKMeansAlgo::ReordSimilarity(uint32_t &node_id, uint32_t &min_clust,
+                                        multimap<double, uint32_t> &sims_to_reorder) {
+
+
+  min_clust = 0;
+  double min_sim = numeric_limits<double>::infinity();
+  double orig_min_sim;
+
+  multimap<double, uint32_t>::iterator it = sims_to_reorder.begin();
+  uint32_t num_reord;
+
+  if (!global_info_->IsTrain(node_id)) {
+    min_clust = it->second;
+    return it->first;
+  }
+
+  for (num_reord = 0; it != sims_to_reorder.end() && num_reord < NUM_REORD;
+       ++it, ++num_reord) {
+    //double sim = sims_[1]->SimilarityToCluster(node_id, it->second);
+    double sim = sims_[0]->SimilarityToBiCluster(node_id, it->second);
+    if (sim < min_sim) {
+      orig_min_sim = it->first;
+      min_sim = sim;
+      min_clust = it->second;
+    }
+
+    if (last_iter_ && Environment::get().params().do_output_sims) {
+      mutex_.Lock();
+      all_similarities_->SetItem(node_id, it->second, sim);
+      mutex_.Unlock();
+    }
+  }
+
+
+  return orig_min_sim;
+}
+
+
+

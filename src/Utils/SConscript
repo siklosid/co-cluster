@@ -1,0 +1,11 @@
+Import('env')
+
+#env.Decider('timestamp-match');
+
+env.Object(['log.cpp', 'app.cpp', 'params.cpp',
+            'ThreadManager.cpp', 'Mutex.cpp',
+            'CommanderFromFile.cpp']
+)
+
+
+env.Library('cluster_utils', [Glob('*.o')])

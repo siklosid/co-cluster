@@ -1,0 +1,21 @@
+algo		kmeans
+
+reader[0]       sparse
+similarity[0]   js
+input_file[0]  kl_sparsematrix.txt
+input_test_file[0]      test_test_matrix.txt
+data_type[0]   sparse
+
+
+reader[1]       simple
+similarity[1]   kernel
+input_file[1]  test_matrix.txt
+input_test_file[1]      test_test_matrix2.txt
+data_type[1]   dense
+
+num_datas      2
+
+do_bicluster	true
+
+num_row_cluster	3
+num_col_cluster 2

@@ -1,0 +1,9 @@
+reader[0]    simple
+similarity[0]   l2
+input_file[0]	test_matrix.txt
+data_type[0]    dense
+
+num_datas	1
+
+num_row_cluster	3
+num_col_cluster 2

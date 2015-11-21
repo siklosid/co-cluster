@@ -1,0 +1,33 @@
+Import('env')
+
+
+env.Object([
+	'ReaderBase.cpp',
+	'ReaderControl.cpp',
+	'ReaderFactory.cpp',
+	'SimpleReader.cpp',
+	'SparseReader.cpp']
+)
+
+env.Library('cluster_reader',
+	[Glob('*.o'),
+	'../Utils/Mutex.o',
+	'../Utils/ThreadManager.o']
+)
+
+reader_sources=[
+	'ReaderBase.o',
+	'ReaderControl.o',
+	'ReaderFactory.o',
+	'SimpleReader.o',
+	'SparseReader.o']
+
+
+env.Program(
+	target='test_reader',
+	source=['test_reader.cpp',
+		reader_sources],
+	LIBS=env['LIBS']+\
+		['cluster_utils',
+		'cluster_common']
+)

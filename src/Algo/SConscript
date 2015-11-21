@@ -1,0 +1,12 @@
+Import('env')
+
+
+env.Object([
+	'AlgoBase.cpp',
+	'KMeansAlgo.cpp',
+	'SoftKMeansAlgo.cpp',
+	'ReOrdKMeansAlgo.cpp',
+	'EvalKMeans.cpp']
+)
+
+env.Library('cluster_algo', [Glob('*.o')])

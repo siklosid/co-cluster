@@ -1,0 +1,64 @@
+CLASS(CoClusterParams)
+CONFIGFILE( "CLUSTROOT",     "clustering.conf","configfile",            'f', "Configuration file")
+
+#define INPUT_DIR "$(CLUSTROOT)/inputs/"
+#define OUTPUT_DIR "$(CLUSTROOT)/outputs/"
+
+#ifndef CO_CLUSTER
+
+#define CO_CLUSTER		0x01
+#define PROG_READER		0x02
+#define PROG_ALL		(CO_CLUSTER|PROG_READER)
+#endif
+
+#include "Def/log.def"
+#include "Def/reader.def"
+#include "Def/dataset.def"
+
+
+/*
+ * Common
+ */
+
+// FN(1024, stop_words, ETC_DIR"stopwords.txt", "stop_words", 0, "Stop word file.", PROG_MOTOR)
+S(1024, input_dir, INPUT_DIR, "input_dir", 0, "Directory for the input files", CO_CLUSTER)
+S(1024, output_dir, OUTPUT_DIR, "output_dir", 0, "Directory for the input files", CO_CLUSTER)
+S(1024, algo, "kmeans", "algo", 0, "Type of the algorithm:\
+  \n\t kmeans - k-means algorithm\
+  \n\t soft_kmeans - soft clustering k-means\
+  \n\t reord_kmeans - only works on two datasets. The first few clusters on the first dataset are reorderd on the second dataset", CO_CLUSTER)
+//S(1024, sims, "simple|simple", "sims", 0, "Name of the similarity functions of datas in the same order seperated by |", CO_CLUSTER)
+S(1024, output_sims, "sims.txt", "output_sims", 0, "Output which contains the similarity of an element to each cluster", CO_CLUSTER)
+S(1024, output_row_result, "row_result.txt", "output_row_result", 0, "Output which contains the final clustering of rows", CO_CLUSTER)
+S(1024, output_col_result, "col_result.txt", "output_col_result", 0, "Output which contains the final clustering of cols", CO_CLUSTER)
+S(1024, output_co_clusts_result, "co_clusts.txt", "output_co_clusts_result", 0, "Output which contains the final co-clusters", CO_CLUSTER)
+S(1024, output_clust_centers, "clust_centers.txt", "output_clust_centers", 0, "Output which contains centers of the final clusters", CO_CLUSTER)
+S(1024, commander_file, "commander_file.txt", "commander_file", 0, "File that we can use for giving commands to the system", CO_CLUSTER)
+S(1024, is_train_filename, "", "is_train_filename", 0, "File that contains that an item belongs to the train or to the test set", CO_CLUSTER)
+
+
+
+P(uint, num_iter, 10, "num_iter", 0, "Maximum number of iterations", CO_CLUSTER)
+P(uint, num_row_cluster, 2, "num_row_cluster", 0, "Number of row clusters", CO_CLUSTER)
+P(uint, num_col_cluster, 2, "num_col_cluster", 0, "Number of col clusters", CO_CLUSTER)
+P(uint, num_threads, 4, "num_threads", 0, "Number of threads in algorithm", CO_CLUSTER)
+P(double, stop_criteria, 1.0, "stop_criteria", 0, "If percentage of moved items falls below this then algorithm stops", CO_CLUSTER)
+
+SW(do_bicluster, false, "do_bicluster", '\0', "Weather running biclustering or just a simple clustering algorithm", CO_CLUSTER)
+SW(do_output_sims, false, "do_output_sims", '\0', "Weather output the similarity of an element to each cluster", CO_CLUSTER)
+SW(do_output_own_sim, false, "do_output_own_sim", '\0', "Weather output the similarity of an element to each cluster", CO_CLUSTER)
+SW(do_output_co_clusts, false, "do_output_co_clusts", '\0', "Weather output the sum of the co-clusters", CO_CLUSTER)
+SW(do_output_clust_centers, false, "do_output_clust_centers", '\0', "Weather output center of clusters", CO_CLUSTER)
+SW(do_continue, false, "do_continue", '\0', "Weather continue clustering from an existing output or start a new one.", CO_CLUSTER)
+SW(need_last_iter, false, "need_last_iter", '\0', "It is true if we need a last iter for some after process. Do not change this. It is set during runtime.", CO_CLUSTER)
+SW(test_mode, false, "test_mode", '\0', "test_mode is used when we are using google test framework", CO_CLUSTER)
+SW(verbose, false, "verbose", '\0', "Weater show iteration progress or not", CO_CLUSTER)
+
+
+/*
+ * help
+ */
+
+HELP("help", 'h', "Prints help for program", "")
+
+#undef INPUT_DIR

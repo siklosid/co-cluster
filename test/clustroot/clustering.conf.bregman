@@ -1,0 +1,14 @@
+reader[0]    sparse
+similarity[0]	bregman
+input_file[0]	bregman_sparsematrix.txt
+data_type[0]	sparse
+num_datas	1
+
+num_row_cluster	2
+num_col_cluster 2
+
+commander_file  /home/sdavid/commander.txt
+
+do_output_sims  false
+do_output_co_clusts	true
+do_bicluster    true

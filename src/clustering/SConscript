@@ -1,0 +1,8 @@
+Import('env')
+
+env.Program(
+    target='clustering',
+    source=['clustering.cpp'],
+    LIBS=env['LIBS']+['cluster_utils', 'cluster_algo', 'cluster_common',
+        'cluster_reader', 'cluster_similarity']
+)

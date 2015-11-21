@@ -1,0 +1,4 @@
+Import('env')
+
+env.Object(['Environment.cpp', 'GlobalInfo.cpp', 'LocalInfo.cpp', 'Data.cpp', 'DenseData.cpp', 'SparseData.cpp'])
+env.Library('cluster_common', [Glob('*.o')])
